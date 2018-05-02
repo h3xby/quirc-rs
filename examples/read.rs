@@ -9,7 +9,7 @@ use std::io::Read;
 use quirc::QrCoder;
 
 fn main() {
-    let arg  = args().nth(1).expect("a file argument");
+    let arg = args().nth(1).expect("a file argument");
     let mut file = File::open(arg).unwrap();
 
     let mut vec = Vec::new();
@@ -19,9 +19,9 @@ fn main() {
 
     let mut quirc = QrCoder::new().unwrap();
 
-    let width  = image.width();
+    let width = image.width();
     let height = image.height();
-    let codes  = quirc.codes(&image, width, height).unwrap();
+    let codes = quirc.codes(&image, width, height).unwrap();
 
     for code in codes {
         match code {

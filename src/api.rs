@@ -10,16 +10,19 @@ use self::quirc_decode_error_t::*;
 /// A QR code.
 #[derive(Debug)]
 pub struct QrCode {
-    pub version:   u8,
+    pub version: u8,
     pub ecc_level: EccLevel,
     pub data_type: DataType,
-    pub eci:       ECI,
-    pub payload:   Vec<u8>,
+    pub eci: ECI,
+    pub payload: Vec<u8>,
 }
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum EccLevel {
-    M, L, H, Q
+    M,
+    L,
+    H,
+    Q,
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -68,7 +71,7 @@ impl QrCoder {
         unsafe {
             match quirc_new() {
                 q if !q.is_null() => Ok(QrCoder(q)),
-                _                 => Err(Error::Alloc),
+                _ => Err(Error::Alloc),
             }
         }
     }
@@ -80,7 +83,7 @@ impl QrCoder {
                 return Err(Error::Alloc);
             }
 
-            let mut width:  c_int = 0;
+            let mut width: c_int = 0;
             let mut height: c_int = 0;
 
             let ptr = quirc_begin(self.0, &mut width, &mut height);
@@ -120,12 +123,12 @@ impl QrCode {
             payload.extend_from_slice(slice);
         }
 
-        QrCode{
-            version:   qd.version as u8,
+        QrCode {
+            version: qd.version as u8,
             ecc_level: qd.ecc_level.into(),
             data_type: qd.data_type.into(),
-            eci:       qd.eci.into(),
-            payload:   payload,
+            eci: qd.eci.into(),
+            payload: payload,
         }
     }
 }
@@ -133,20 +136,20 @@ impl QrCode {
 /// `QrCode` iterator.
 pub struct Codes<'a> {
     count: usize,
-    next:  usize,
+    next: usize,
     quirc: &'a mut quirc,
-    code:  quirc_code,
-    data:  quirc_data,
+    code: quirc_code,
+    data: quirc_data,
 }
 
 impl<'a> Codes<'a> {
     fn new(count: usize, quirc: &'a mut quirc) -> Self {
-        Codes{
+        Codes {
             count: count,
-            next:  0,
+            next: 0,
             quirc: quirc,
-            code:  unsafe { mem::zeroed() },
-            data:  unsafe { mem::zeroed() },
+            code: unsafe { mem::zeroed() },
+            data: unsafe { mem::zeroed() },
         }
     }
 }
@@ -159,7 +162,7 @@ impl<'a> Iterator for Codes<'a> {
             return None;
         }
 
-        let index  = self.next as c_int;
+        let index = self.next as c_int;
         self.next += 1;
 
         unsafe {
@@ -167,7 +170,7 @@ impl<'a> Iterator for Codes<'a> {
             let data = &mut self.data;
             Some(match quirc_decode(&self.code, data) {
                 QUIRC_SUCCESS => Ok(QrCode::new(data)),
-                err           => Err(Error::Decode(err as u32)),
+                err => Err(Error::Decode(err as u32)),
             })
         }
     }
@@ -180,7 +183,7 @@ impl From<c_int> for EccLevel {
             QUIRC_ECC_LEVEL_L => EccLevel::L,
             QUIRC_ECC_LEVEL_H => EccLevel::H,
             QUIRC_ECC_LEVEL_Q => EccLevel::Q,
-            _                 => panic!("unsupported ECC level {}", n),
+            _ => panic!("unsupported ECC level {}", n),
         }
     }
 }
@@ -189,10 +192,10 @@ impl From<c_int> for DataType {
     fn from(n: c_int) -> Self {
         match n {
             QUIRC_DATA_TYPE_NUMERIC => DataType::Numeric,
-            QUIRC_DATA_TYPE_ALPHA   => DataType::Alpha,
-            QUIRC_DATA_TYPE_BYTE    => DataType::Byte,
-            QUIRC_DATA_TYPE_KANJI   => DataType::Kanji,
-            _                       => DataType::Other(n as u8),
+            QUIRC_DATA_TYPE_ALPHA => DataType::Alpha,
+            QUIRC_DATA_TYPE_BYTE => DataType::Byte,
+            QUIRC_DATA_TYPE_KANJI => DataType::Kanji,
+            _ => DataType::Other(n as u8),
         }
     }
 }
@@ -200,22 +203,22 @@ impl From<c_int> for DataType {
 impl From<u32> for ECI {
     fn from(n: u32) -> Self {
         match n {
-            QUIRC_ECI_ISO_8859_1  => ECI::ISO_8859_1,
-            QUIRC_ECI_IBM437      => ECI::IBM437,
-            QUIRC_ECI_ISO_8859_2  => ECI::ISO_8859_2,
-            QUIRC_ECI_ISO_8859_3  => ECI::ISO_8859_3,
-            QUIRC_ECI_ISO_8859_4  => ECI::ISO_8859_4,
-            QUIRC_ECI_ISO_8859_5  => ECI::ISO_8859_5,
-            QUIRC_ECI_ISO_8859_6  => ECI::ISO_8859_6,
-            QUIRC_ECI_ISO_8859_7  => ECI::ISO_8859_7,
-            QUIRC_ECI_ISO_8859_8  => ECI::ISO_8859_8,
-            QUIRC_ECI_ISO_8859_9  => ECI::ISO_8859_9,
+            QUIRC_ECI_ISO_8859_1 => ECI::ISO_8859_1,
+            QUIRC_ECI_IBM437 => ECI::IBM437,
+            QUIRC_ECI_ISO_8859_2 => ECI::ISO_8859_2,
+            QUIRC_ECI_ISO_8859_3 => ECI::ISO_8859_3,
+            QUIRC_ECI_ISO_8859_4 => ECI::ISO_8859_4,
+            QUIRC_ECI_ISO_8859_5 => ECI::ISO_8859_5,
+            QUIRC_ECI_ISO_8859_6 => ECI::ISO_8859_6,
+            QUIRC_ECI_ISO_8859_7 => ECI::ISO_8859_7,
+            QUIRC_ECI_ISO_8859_8 => ECI::ISO_8859_8,
+            QUIRC_ECI_ISO_8859_9 => ECI::ISO_8859_9,
             QUIRC_ECI_WINDOWS_874 => ECI::WINDOWS_874,
             QUIRC_ECI_ISO_8859_13 => ECI::ISO_8859_13,
             QUIRC_ECI_ISO_8859_15 => ECI::ISO_8859_15,
-            QUIRC_ECI_SHIFT_JIS   => ECI::SHIFT_JIS,
-            QUIRC_ECI_UTF_8       => ECI::UTF_8,
-            _                     => ECI::Other(n as u8),
+            QUIRC_ECI_SHIFT_JIS => ECI::SHIFT_JIS,
+            QUIRC_ECI_UTF_8 => ECI::UTF_8,
+            _ => ECI::Other(n as u8),
         }
     }
 }
